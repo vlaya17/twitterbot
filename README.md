@@ -43,7 +43,7 @@ Download chromedriver: https://chromedriver.chromium.org/ , extract zip archive 
 
 ## Usage
 
-Create account, query and reply file profiles (examples are present in profiles folder). 
+Create account, query, reply and limit file profiles (examples are present in profiles folder). 
 See https://github.com/taspinar/twitterscraper (2.2.2 Examples of advanced queries) to know how to format your query.
 The query will be used to find tweets to reply to.
 
