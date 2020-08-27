@@ -27,6 +27,9 @@ tweets = []
 # Map to keep track of tweets we already replied to
 replied_tweets = {}
 
+# Doesn't reply to tweets, used for testing
+debug=False
+
 # Load map from file
 def loadRepliedTweets():
     global replied_tweets
@@ -41,7 +44,7 @@ def saveRepliedTweets():
 # Remove old tweets in the map to prevent it getting too big
 def cleanOldRepliedTweets():
 
-    hours = 72
+    hours = 240
 
     for url in replied_tweets:
         if replied_tweets[url] < (int(time.time()) - 3600*hours):
@@ -54,14 +57,14 @@ def random_sleep():
     time.sleep(uniform(2.0, 4.0))
 
 # Refill the tweet buffer
-def FindNewTweets(query, hours, limit):
+def FindNewTweets(query, hours, limit, days):
 
     global tweets
 
     tweet_file="tweets.json"
 
     today = datetime.date.today()
-    yesterday = today - datetime.timedelta(days=1)
+    yesterday = today - datetime.timedelta(days=days)
     yesterday_date = yesterday.strftime("%Y-%m-%d")
 
     os.system("rm -f {}".format(tweet_file))
@@ -185,56 +188,58 @@ class TwitterBot():
         reply_input.send_keys(Keys.CONTROL, Keys.RETURN)
 
 # Find tweets containing search pattern and reply to them
-def startRoutine(account_info, query, reply, limit):
+def startRoutine(account_info, query_list, reply, limit, days):
 
 
     print("Loggin in: {} {} {}".format(account_info["email"], account_info["username"], account_info["password"]))
-    bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
-    bot.signIn()
+
+    if not debug:
+        bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
+        bot.signIn()
 
     start_timestamp = time.time()
 
     print("Reply: {}".format(reply))
-    print("Query: {}".format(query))
+    print("Queries: {}".format(", ".join(query_list)))
 
     while True:
 
-        FindNewTweets(query, 48, limit)
+        for query in query_list:
 
-        for tweet in tweets:
-            if not tweet['url'] in replied_tweets:
+            FindNewTweets(query, days * 24, limit, days)
 
-                # Keep track of the replied tweet to avoid replying it again
-                replied_tweets[tweet['url']] = tweet['timestamp']
-                saveRepliedTweets()
+            for tweet in tweets:
+                if not tweet['url'] in replied_tweets:
 
-                dt = datetime.datetime.fromtimestamp(tweet['timestamp'])
-                tweet_time = dt.strftime("%H:%M:%S %d-%m-%Y")
-                print("Replying to {} - {}".format(tweet['url'], tweet_time))
-                bot.ReplyToTweet(tweet['url'], reply)
+                    # Keep track of the replied tweet to avoid replying it again
+                    replied_tweets[tweet['url']] = tweet['timestamp']
+                    saveRepliedTweets()
 
+                    dt = datetime.datetime.fromtimestamp(tweet['timestamp'])
+                    tweet_time = dt.strftime("%H:%M:%S %d-%m-%Y")
+                    print("Replying to {} - {}".format(tweet['url'], tweet_time))
+
+                    if not debug:
+                        bot.ReplyToTweet(tweet['url'], reply)
+                        random_sleep()
+                        random_sleep()
+
+            if not debug:
                 random_sleep()
                 random_sleep()
 
-        random_sleep()
-        random_sleep()
-
-        # Remove old tweets once in a while
-        if (time.time() - start_timestamp) > 48:
-            cleanOldRepliedTweets()
+            # Remove old tweets once in a while
+            if (time.time() - start_timestamp) > 48:
+                cleanOldRepliedTweets()
 
 def parse_account_info(name):
     with open(name, "r") as f:
         (email, username, password) = [l.strip() for l in f]
         return {"email": email, "username": username, "password": password}
 
-def parse_limit(name):
-    with open(name, "r") as f:
-        return f.read().strip()
-
 def parse_query(name):
     with open(name, "r") as f:
-        return f.read().strip()
+        return [l.strip() for l in f]
 
 def parse_reply(name):
     with open(name, "r") as f:
@@ -245,6 +250,7 @@ def parse_args():
     parser = argparse
     parser = argparse.ArgumentParser(description='Twitter bot')
     parser.add_argument('-l', nargs=1, required=False, help='limit used for twitterscraper')
+    parser.add_argument('-d', nargs=1, required=False, help='days from which the scraping should start')
     parser.add_argument('-a', nargs=1, required=False, help='account login info file')
     parser.add_argument('-q', nargs=1, required=False, help='query to use to find tweets to reply to')
     parser.add_argument('-t', nargs=1, required=False, help='tweet to use for replies')
@@ -258,11 +264,15 @@ def parse_args():
     loadRepliedTweets()
 
     account_info = parse_account_info(args.a[0])
-    query = parse_query(args.q[0])
-    limit = parse_limit(args.l[0])
+    query_list = parse_query(args.q[0])
     reply = parse_reply(args.t[0])
 
-    startRoutine(account_info, query, reply, limit)
+    if not args.d is None:
+        days = int(args.d[0])
+    else:
+        days = 1
+
+    startRoutine(account_info, query_list, reply, int(args.l[0]), days)
 
 parse_args()
 

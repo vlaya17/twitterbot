@@ -1,1 +1,4 @@
-query
+query with multiple words
+this OR that
+those AND ((this OR that) OR these)
+each line is a query
