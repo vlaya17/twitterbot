@@ -22,6 +22,8 @@ from selenium.webdriver.common.keys import Keys
 from twitterscraper import query_tweets
 from random import uniform
 
+LIMIT_DAYS=5
+
 # Buffer containing tweets to reply to, sorted by date
 tweets = []
 # Map to keep track of tweets we already replied to
@@ -29,6 +31,11 @@ replied_tweets = {}
 
 # Doesn't reply to tweets, used for testing
 debug=False
+
+def hours_to_ns(hours):
+    return hours * 3600 * 10**9
+def days_to_ns(days):
+    return hours_to_ns(24 * days)
 
 # Load map from file
 def loadRepliedTweets():
@@ -44,10 +51,8 @@ def saveRepliedTweets():
 # Remove old tweets in the map to prevent it getting too big
 def cleanOldRepliedTweets():
 
-    hours = 240
-
     for url in replied_tweets:
-        if replied_tweets[url] < (int(time.time()) - 3600*hours):
+        if replied_tweets[url] < (int(time.time()) - days_to_ns(LIMIT_DAYS)):
             replied_tweets.pop(url, None)
 
     saveRepliedTweets()
@@ -198,6 +203,8 @@ def startRoutine(account_info, query_list, reply, limit, days):
         bot.signIn()
 
     start_timestamp = time.time()
+    last_clean = start_timestamp
+    last_sleep = start_timestamp
 
     print("Reply: {}".format(reply))
     print("Queries: {}".format(", ".join(query_list)))
@@ -221,16 +228,23 @@ def startRoutine(account_info, query_list, reply, limit, days):
 
                     if not debug:
                         bot.ReplyToTweet(tweet['url'], reply)
-                        random_sleep()
-                        random_sleep()
+
+                        for i in range(10):
+                            random_sleep()
 
             if not debug:
                 random_sleep()
                 random_sleep()
 
-            # Remove old tweets once in a while
-            if (time.time() - start_timestamp) > 48:
+            # Sleep for a while every once in a while
+            if (time.time() - last_sleep) > hours_to_ns(2):
+                time.sleep(random.randint(1800, 7200))
+                last_sleep = time.time()
+
+            # Remove old tweets every once in a while
+            if (time.time() - last_clean) > hours_to_ns(24):
                 cleanOldRepliedTweets()
+                last_clean = time.time()
 
 def parse_account_info(name):
     with open(name, "r") as f:
@@ -269,6 +283,9 @@ def parse_args():
 
     if not args.d is None:
         days = int(args.d[0])
+        if days > LIMIT_DAYS:
+            print("Day limit is set to {}".format(LIMIT_DAYS))
+            exit()
     else:
         days = 1
 
