@@ -53,7 +53,7 @@ def random_sleep():
     time.sleep(uniform(2.0, 4.0))
 
 # Refill the tweet buffer
-def FindNewTweets(query, hours):
+def FindNewTweets(query, hours, limit):
 
     global tweets
 
@@ -64,7 +64,11 @@ def FindNewTweets(query, hours):
     yesterday_date = yesterday.strftime("%Y-%m-%d")
 
     os.system("rm -f {}".format(tweet_file))
-    cmd = "twitterscraper \"{}\" -l 1000 --lang fr -bd {} -p 1 -o {}".format(query, yesterday_date, tweet_file)
+
+    limit_option="" if limit == "0" else "-l {}".format(limit)
+
+    cmd = "twitterscraper \"{}\" {} -bd {} -p 1 -o {}".format(query, limit_option, yesterday_date, tweet_file)
+    print(cmd)
     os.system(cmd)
 
     with open(tweet_file) as f:
@@ -180,11 +184,12 @@ class TwitterBot():
         reply_input.send_keys(Keys.CONTROL, Keys.RETURN)
 
 # Find tweets containing search pattern and reply to them
-def startRoutine(account_info, query, reply):
+def startRoutine(account_info, query, reply, limit):
+
 
     print("Loggin in: {} {} {}".format(account_info["email"], account_info["username"], account_info["password"]))
-    #bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
-    #bot.signIn()
+    bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
+    bot.signIn()
 
     start_timestamp = time.time()
 
@@ -193,7 +198,7 @@ def startRoutine(account_info, query, reply):
 
     while True:
 
-        FindNewTweets(query, 48)
+        FindNewTweets(query, 48, limit)
 
         for tweet in tweets:
             if not tweet['url'] in replied_tweets:
@@ -205,7 +210,7 @@ def startRoutine(account_info, query, reply):
                 dt = datetime.datetime.fromtimestamp(tweet['timestamp'])
                 tweet_time = dt.strftime("%H:%M:%S %d-%m-%Y")
                 print("Replying to {} - {}".format(tweet['url'], tweet_time))
-                #bot.ReplyToTweet(tweet['url'], reply)
+                bot.ReplyToTweet(tweet['url'], reply)
 
                 random_sleep()
                 random_sleep()
@@ -218,40 +223,43 @@ def startRoutine(account_info, query, reply):
             cleanOldRepliedTweets()
 
 def parse_account_info(name):
-
     with open(name, "r") as f:
-        (email, username, password) = [l for l in f]
+        (email, username, password) = [l.strip() for l in f]
         return {"email": email, "username": username, "password": password}
 
-def parse_query(name):
-
+def parse_limit(name):
     with open(name, "r") as f:
-        return f.read()
+        return f.read().strip()
+
+def parse_query(name):
+    with open(name, "r") as f:
+        return f.read().strip()
 
 def parse_reply(name):
-
     with open(name, "r") as f:
-        return f.read()
+        return f.read().strip()
 
 def parse_args():
 
     parser = argparse
     parser = argparse.ArgumentParser(description='Twitter bot')
+    parser.add_argument('-l', nargs=1, required=False, help='limit used for twitterscraper')
     parser.add_argument('-a', nargs=1, required=False, help='account login info file')
     parser.add_argument('-q', nargs=1, required=False, help='query to use to find tweets to reply to')
     parser.add_argument('-t', nargs=1, required=False, help='tweet to use for replies')
 
     args = parser.parse_args()
 
-    if args.a is None or args.q is None or args.t is None:
+    if args.l is None or args.a is None or args.q is None or args.t is None:
         parser.print_help(sys.stderr)
         exit()
 
     account_info = parse_account_info(args.a[0])
     query = parse_query(args.q[0])
+    limit = parse_limit(args.l[0])
     reply = parse_reply(args.t[0])
 
-    startRoutine(account_info, query, reply)
+    startRoutine(account_info, query, reply, limit)
 
 parse_args()
 
