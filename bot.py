@@ -29,8 +29,9 @@ replied_tweets = {}
 
 # Load map from file
 def loadRepliedTweets():
+    global replied_tweets
     with open('replied_tweets.json', 'r') as f:
-        data = json.load(f)
+        replied_tweets = json.load(f)
 
 # Save map to file
 def saveRepliedTweets():
@@ -188,8 +189,8 @@ def startRoutine(account_info, query, reply, limit):
 
 
     print("Loggin in: {} {} {}".format(account_info["email"], account_info["username"], account_info["password"]))
-    bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
-    bot.signIn()
+    #bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
+    #bot.signIn()
 
     start_timestamp = time.time()
 
@@ -210,13 +211,13 @@ def startRoutine(account_info, query, reply, limit):
                 dt = datetime.datetime.fromtimestamp(tweet['timestamp'])
                 tweet_time = dt.strftime("%H:%M:%S %d-%m-%Y")
                 print("Replying to {} - {}".format(tweet['url'], tweet_time))
-                bot.ReplyToTweet(tweet['url'], reply)
+                #bot.ReplyToTweet(tweet['url'], reply)
 
-                random_sleep()
-                random_sleep()
+                #random_sleep()
+                #random_sleep()
 
-        random_sleep()
-        random_sleep()
+        #random_sleep()
+        #random_sleep()
 
         # Remove old tweets once in a while
         if (time.time() - start_timestamp) > 48:
@@ -253,6 +254,8 @@ def parse_args():
     if args.l is None or args.a is None or args.q is None or args.t is None:
         parser.print_help(sys.stderr)
         exit()
+
+    loadRepliedTweets()
 
     account_info = parse_account_info(args.a[0])
     query = parse_query(args.q[0])
