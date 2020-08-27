@@ -39,19 +39,24 @@ pip install selenium
 
 ### Provide chromedriver executable
 
-Download chromedriver: https://chromedriver.chromium.org/
-Extract zip archive and put chromedriver executable at the root of the twitterbot repo
+Download chromedriver: https://chromedriver.chromium.org/ , extract zip archive and put chromedriver executable at the root of the twitterbot repo
 
-## Run
+## Usage
 
-If you created a virtual environment, activate it first:
+Create account, query and reply file profiles (examples are present in profiles folder). 
+See https://github.com/taspinar/twitterscraper (2.2.2 Examples of advanced queries) to know how to format your query.
+The query will be used to find tweets to reply to.
+
+If you created a virtual environment, activate it before running the bot:
 
 ```
 source venv/bin/activate
 ```
 
-Then run the bot:
+Then run the bot and give it the profiles as parameter
 
 ```
-python bot.py
+python bot.py -a account_info_file -s search_pattern_file -t reply_file
 ```
+
+Multiple bots can be launched at once

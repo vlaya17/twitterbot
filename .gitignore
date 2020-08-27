@@ -1,2 +1,5 @@
 chromedriver
 twitterscraper
+profiles
+tweets.json
+replied_tweets.json
