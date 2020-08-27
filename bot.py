@@ -189,8 +189,8 @@ def startRoutine(account_info, query, reply, limit):
 
 
     print("Loggin in: {} {} {}".format(account_info["email"], account_info["username"], account_info["password"]))
-    #bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
-    #bot.signIn()
+    bot = TwitterBot(account_info["email"], account_info["username"], account_info["password"])
+    bot.signIn()
 
     start_timestamp = time.time()
 
@@ -211,13 +211,13 @@ def startRoutine(account_info, query, reply, limit):
                 dt = datetime.datetime.fromtimestamp(tweet['timestamp'])
                 tweet_time = dt.strftime("%H:%M:%S %d-%m-%Y")
                 print("Replying to {} - {}".format(tweet['url'], tweet_time))
-                #bot.ReplyToTweet(tweet['url'], reply)
+                bot.ReplyToTweet(tweet['url'], reply)
 
-                #random_sleep()
-                #random_sleep()
+                random_sleep()
+                random_sleep()
 
-        #random_sleep()
-        #random_sleep()
+        random_sleep()
+        random_sleep()
 
         # Remove old tweets once in a while
         if (time.time() - start_timestamp) > 48:
